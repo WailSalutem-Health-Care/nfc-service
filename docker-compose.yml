@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  nfc-service:
+    build: .
+    container_name: nfc-service
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    networks:
+      - wailsalutem-net
+
+networks:
+  wailsalutem-net:
+    external: true
