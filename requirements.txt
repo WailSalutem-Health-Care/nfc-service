@@ -3,3 +3,5 @@ uvicorn
 psycopg[binary]
 pika
 python-dotenv
+requests
+python-jose[cryptography]
