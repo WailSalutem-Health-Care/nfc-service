@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-psycopg[binary]
+sqlalchemy
+psycopg2-binary
 pika
 python-dotenv
 requests
