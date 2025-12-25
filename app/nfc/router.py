@@ -6,6 +6,7 @@ from app.auth.dependencies import require_role
 from app.db.session import get_db_for_org
 from app.db.models import NFCTag
 from app.nfc.schemas import NFCResolveRequest, NFCResolveResponse
+from app.messaging.rabbitmq import publish_event
 
 router = APIRouter(prefix="/nfc", tags=["NFC"])
 
@@ -34,6 +35,18 @@ def resolve_nfc_tag(
 
         if status != "active":
             raise HTTPException(status_code=403, detail="NFC tag is not active")
+        
+        publish_event(
+            routing_key="nfc.resolved",
+            payload={
+            "event": "nfc.resolved",
+                "tag_id": payload.tag_id,
+                "patient_id": str(patient_id),
+                "organization_id": organization_id,
+                "caregiver_id": user["user_id"],  # Keycloak user id
+            },
+    )
+
 
         return NFCResolveResponse(
             patient_id=str(patient_id),
