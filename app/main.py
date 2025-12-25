@@ -12,12 +12,3 @@ app.include_router(nfc_router)
 def health():
     return {"status": "ok"}
 
-
-@app.get("/secure-endpoint")
-def secure_endpoint(user=Depends(require_role(["CAREGIVER"]))):
-    return {
-        "message": "Access granted",
-        "user_id": user["user_id"],
-        "organization_id": user["organization_id"],
-    }
-

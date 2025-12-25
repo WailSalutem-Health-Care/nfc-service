@@ -1,0 +1,5 @@
+roles:
+
+  CAREGIVER:
+    - nfc:check-in
+    - nfc:check-out

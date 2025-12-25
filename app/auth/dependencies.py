@@ -1,6 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from app.auth.auth import decode_jwt
+from app.auth.permissions import get_permissions_for_roles
 
 security = HTTPBearer()
 
@@ -8,18 +10,14 @@ security = HTTPBearer()
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    token = credentials.credentials
-    payload = decode_jwt(token)
+    payload = decode_jwt(credentials.credentials)
 
     user_id = payload.get("sub")
     organization_id = payload.get("organisationId")
     roles = payload.get("realm_access", {}).get("roles", [])
 
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User ID missing")
-
-    if not organization_id:
-        raise HTTPException(status_code=401, detail="Organization ID missing")
+    if not user_id or not organization_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     return {
         "user_id": user_id,
@@ -28,25 +26,16 @@ def get_current_user(
     }
 
 
-def require_role(required_roles: list[str]):
-    def dependency(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-    ):
-        token = credentials.credentials
-        payload = decode_jwt(token)
+def require_permission_any(required_permissions: list[str]):
+    def dependency(user=Depends(get_current_user)):
+        user_permissions = get_permissions_for_roles(user["roles"])
 
-        realm_roles = payload.get("realm_access", {}).get("roles", [])
-
-        if not any(role in realm_roles for role in required_roles):
+        if not any(p in user_permissions for p in required_permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",
             )
 
-        return {
-            "user_id": payload.get("sub"),
-            "organization_id": payload.get("organisationId"),
-            "roles": realm_roles,
-        }
+        return user
 
     return dependency

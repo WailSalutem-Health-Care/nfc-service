@@ -1,14 +1,13 @@
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from app.auth.dependencies import require_role
+from app.auth.dependencies import require_permission_any
 from app.db.session import get_db_for_org
-from app.db.models import NFCTag
-from app.nfc.schemas import NFCResolveRequest, NFCResolveResponse
+from app.nfc.schemas import NFCResolveRequest, NFCResolveResponse, NFCDeactivateRequest
 from app.messaging.rabbitmq import publish_event
 
 router = APIRouter(prefix="/nfc", tags=["NFC"])
+
 
 @router.post(
     "/resolve",
@@ -16,41 +15,49 @@ router = APIRouter(prefix="/nfc", tags=["NFC"])
 )
 def resolve_nfc_tag(
     payload: NFCResolveRequest,
-    user=Depends(require_role(["CAREGIVER"])),
+    user=Depends(require_permission_any([
+        "nfc:check-in",
+        "nfc:check-out",
+    ])),
 ):
-    organization_id = user["organization_id"]
-
-    db = next(get_db_for_org(organization_id))
+    org_id = user["organization_id"]
+    db = next(get_db_for_org(org_id))
 
     try:
         result = db.execute(
-            text(f'SELECT id, tag_id, patient_id, status FROM "{organization_id}".nfc_tags WHERE tag_id = :tag_id'),
-            {"tag_id": payload.tag_id}
+            text(
+                f'''
+                SELECT tag_id, patient_id, status
+                FROM "{org_id}".nfc_tags
+                WHERE tag_id = :tag_id
+                '''
+            ),
+            {"tag_id": payload.tag_id},
         ).fetchone()
 
         if not result:
-            raise HTTPException(status_code=404, detail="NFC tag not found")
+            raise HTTPException(404, "NFC tag not found")
 
-        tag_id, patient_id, status = result.tag_id, result.patient_id, result.status
+        if result.status != "active":
+            raise HTTPException(403, "NFC tag is not active")
 
-        if status != "active":
-            raise HTTPException(status_code=403, detail="NFC tag is not active")
-        
         publish_event(
             routing_key="nfc.resolved",
             payload={
-            "event": "nfc.resolved",
+                "event": "nfc.resolved",
                 "tag_id": payload.tag_id,
-                "patient_id": str(patient_id),
-                "organization_id": organization_id,
-                "caregiver_id": user["user_id"],  # Keycloak user id
+                "patient_id": str(result.patient_id),
+                "organization_id": org_id,
+                "caregiver_id": user["user_id"],
             },
-    )
-
+        )
 
         return NFCResolveResponse(
-            patient_id=str(patient_id),
-            organization_id=organization_id,
+            patient_id=str(result.patient_id),
+            organization_id=org_id,
         )
+
     finally:
         db.close()
+
+
