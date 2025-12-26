@@ -1,5 +1,11 @@
 roles:
-
   CAREGIVER:
-    - nfc:check-in
-    - nfc:check-out
+    - nfc:resolve
+
+  ORG_ADMIN:
+    - nfc:assign
+    - nfc:read
+    - nfc:update
+
+  SUPER_ADMIN:
+    - nfc:delete

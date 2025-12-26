@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Depends
-from app.auth.dependencies import require_role
+from fastapi import FastAPI
 from app.nfc.router import router as nfc_router
 from dotenv import load_dotenv
 load_dotenv()

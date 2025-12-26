@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from uuid import UUID
 
 class NFCResolveRequest(BaseModel):
     tag_id: str
@@ -6,3 +7,14 @@ class NFCResolveRequest(BaseModel):
 class NFCResolveResponse(BaseModel):
     patient_id: str
     organization_id: str
+
+class NFCAssignRequest(BaseModel):
+    tag_id: str
+    patient_id: UUID
+
+
+class NFCAssignResponse(BaseModel):
+    tag_id: str
+    patient_id: UUID
+    organization_id: str
+    status: str
