@@ -4,6 +4,7 @@ roles:
 
   ORG_ADMIN:
     - nfc:assign
+    - nfc:deactivate
     - nfc:read
     - nfc:update
 
