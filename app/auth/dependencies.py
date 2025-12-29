@@ -1,41 +1,16 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pathlib import Path
 
-from app.auth.auth import decode_jwt
-from app.auth.permissions import get_permissions_for_roles
+from app.auth.jwks_config import default_jwks_config
+from app.auth.jwt_verifier import JWTVerifier
+from app.auth.middleware import AuthorizationMiddleware
+from app.auth.permissions_store import PermissionsStore
 
-security = HTTPBearer()
+_permissions_file = Path(__file__).parent / "permissions.yml"
 
+_jwks_config = default_jwks_config()
+_jwt_verifier = JWTVerifier(_jwks_config)
+_permissions_store = PermissionsStore(_permissions_file)
+_auth_middleware = AuthorizationMiddleware(_jwt_verifier, _permissions_store)
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    payload = decode_jwt(credentials.credentials)
-
-    user_id = payload.get("sub")
-    organization_id = payload.get("organisationId")
-    roles = payload.get("realm_access", {}).get("roles", [])
-
-    if not user_id or not organization_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    return {
-        "user_id": user_id,
-        "organization_id": organization_id,
-        "roles": roles,
-    }
-
-
-def require_permission_any(required_permissions: list[str]):
-    def dependency(user=Depends(get_current_user)):
-        user_permissions = get_permissions_for_roles(user["roles"])
-
-        if not any(p in user_permissions for p in required_permissions):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
-            )
-
-        return user
-
-    return dependency
+get_current_user = _auth_middleware.get_current_user
+require_permission_any = _auth_middleware.require_permission_any
