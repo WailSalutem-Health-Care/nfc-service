@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, status
 
 from app.auth.dependencies import require_permission_any
 from app.db.session import get_db_for_org
 from app.messaging.rabbitmq import publish_event
+from app.nfc.repositories import NfcRepository
 from app.nfc.schemas import (
     NFCAssignRequest,
     NFCAssignResponse,
     NFCResolveRequest,
     NFCResolveResponse,
 )
+from app.nfc.services import NfcService
 
 
 router = APIRouter(prefix="/nfc", tags=["NFC"])
@@ -33,37 +34,15 @@ def resolve_nfc_tag(
     db = get_db_for_org(org_id, user.get("schema_name"))
 
     try:
-        result = db.execute(
-            text(
-                '''
-                SELECT tag_id, patient_id, status
-                FROM "nfc_tags"
-                WHERE tag_id = :tag_id
-                '''
-            ),
-            {"tag_id": payload.tag_id},
-        ).fetchone()
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
 
-        if not result:
-            raise HTTPException(404, "NFC tag not found")
-
-        if result.status != "active":
-            raise HTTPException(403, "NFC tag is not active")
-
-        publish_event(
-            routing_key="nfc.resolved",
-            payload={
-                "event": "nfc.resolved",
-                "tag_id": payload.tag_id,
-                "patient_id": str(result.patient_id),
-                "organization_id": org_id,
-            },
-        )
-
-        return NFCResolveResponse(
-            patient_id=str(result.patient_id),
+        result = service.resolve_tag(
             organization_id=org_id,
+            tag_id=payload.tag_id,
         )
+
+        return NFCResolveResponse(**result)
 
     finally:
         db.close()
@@ -82,71 +61,17 @@ def assign_nfc_tag(
     db = get_db_for_org(org_id, user.get("schema_name"))
 
     try:
-        patient = db.execute(
-            text(
-                '''
-                SELECT id
-                FROM "patients"
-                WHERE id = :patient_id
-                '''
-            ),
-            {"patient_id": payload.patient_id},
-        ).fetchone()
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
 
-        if not patient:
-            raise HTTPException(404, "Patient not found")
-
-        existing_tag = db.execute(
-            text(
-                '''
-                SELECT tag_id
-                FROM "nfc_tags"
-                WHERE patient_id = :patient_id
-                  AND status = 'active'
-                '''
-            ),
-            {"patient_id": payload.patient_id},
-        ).fetchone()
-
-        if existing_tag and existing_tag.tag_id != payload.tag_id:
-            raise HTTPException(409, "Patient already has an active NFC tag")
-
-        db.execute(
-            text(
-                '''
-                INSERT INTO "nfc_tags" (tag_id, patient_id, status)
-                VALUES (:tag_id, :patient_id, 'active')
-                ON CONFLICT (tag_id)
-                DO UPDATE SET
-                    patient_id = EXCLUDED.patient_id,
-                    status = 'active'
-                '''
-            ),
-            {
-                "tag_id": payload.tag_id,
-                "patient_id": payload.patient_id,
-            },
-        )
-
-        db.commit()
-
-        publish_event(
-            routing_key="nfc.assigned",
-            payload={
-                "event": "nfc.assigned",
-                "tag_id": payload.tag_id,
-                "patient_id": str(payload.patient_id),
-                "organization_id": org_id,
-                "assigned_by": user["user_id"],
-            },
-        )
-
-        return NFCAssignResponse(
+        result = service.assign_tag(
+            organization_id=org_id,
+            user_id=user["user_id"],
             tag_id=payload.tag_id,
             patient_id=payload.patient_id,
-            organization_id=org_id,
-            status="active",
         )
+
+        return NFCAssignResponse(**result)
 
     finally:
         db.close()
