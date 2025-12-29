@@ -1,4 +1,6 @@
 import os
+from typing import Optional
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -24,16 +26,29 @@ SessionLocal = sessionmaker(
     bind=engine,
 )
 
-def get_db_for_org(organization_id: str):
+def get_db_for_org(organization_id: str, schema_name: Optional[str] = None):
     db = SessionLocal()
-    try:
-        db.execute(text(f'SET search_path TO "{organization_id}"'))
-        result = db.execute(text("SHOW search_path")).fetchone()
-        print("SEARCH PATH:", result)
+    if not schema_name:
+        schema_name = db.execute(
+            text(
+                """
+                SELECT schema_name
+                FROM wailsalutem.organizations
+                WHERE id = :org_id
+                """
+            ),
+            {"org_id": organization_id},
+        ).scalar()
 
-        yield db
-    finally:
+    if not schema_name:
         db.close()
+        raise RuntimeError("Schema name not found for organization")
+
+    db.connection().exec_driver_sql(f'SET search_path TO "{schema_name}"')
+    result = db.execute(text("SHOW search_path")).fetchone()
+    print("SEARCH PATH:", result)
+
+    return db
 
 
 

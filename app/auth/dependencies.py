@@ -14,6 +14,7 @@ def get_current_user(
 
     user_id = payload.get("sub")
     organization_id = payload.get("organisationId")
+    schema_name = payload.get("schema") or payload.get("schema_name")
     roles = payload.get("realm_access", {}).get("roles", [])
 
     if not user_id or not organization_id:
@@ -22,6 +23,7 @@ def get_current_user(
     return {
         "user_id": user_id,
         "organization_id": organization_id,
+        "schema_name": schema_name,
         "roles": roles,
     }
 

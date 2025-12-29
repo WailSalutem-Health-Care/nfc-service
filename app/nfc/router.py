@@ -3,9 +3,13 @@ from sqlalchemy import text
 
 from app.auth.dependencies import require_permission_any
 from app.db.session import get_db_for_org
-from app.nfc.schemas import NFCResolveRequest, NFCResolveResponse
 from app.messaging.rabbitmq import publish_event
-from app.nfc.schemas import NFCAssignRequest, NFCAssignResponse
+from app.nfc.schemas import (
+    NFCAssignRequest,
+    NFCAssignResponse,
+    NFCResolveRequest,
+    NFCResolveResponse,
+)
 
 
 router = APIRouter(prefix="/nfc", tags=["NFC"])
@@ -17,19 +21,23 @@ router = APIRouter(prefix="/nfc", tags=["NFC"])
 )
 def resolve_nfc_tag(
     payload: NFCResolveRequest,
-    user=Depends(require_permission_any([
-        "nfc:resolve",
-    ])),
+    user=Depends(
+        require_permission_any(
+            [
+                "nfc:resolve",
+            ]
+        )
+    ),
 ):
     org_id = user["organization_id"]
-    db = next(get_db_for_org(org_id))
+    db = get_db_for_org(org_id, user.get("schema_name"))
 
     try:
         result = db.execute(
             text(
-                f'''
+                '''
                 SELECT tag_id, patient_id, status
-                FROM "{org_id}".nfc_tags
+                FROM "nfc_tags"
                 WHERE tag_id = :tag_id
                 '''
             ),
@@ -49,7 +57,6 @@ def resolve_nfc_tag(
                 "tag_id": payload.tag_id,
                 "patient_id": str(result.patient_id),
                 "organization_id": org_id,
-                "caregiver_id": user["user_id"],
             },
         )
 
@@ -62,8 +69,6 @@ def resolve_nfc_tag(
         db.close()
 
 
-
-
 @router.post(
     "/assign",
     response_model=NFCAssignResponse,
@@ -74,15 +79,14 @@ def assign_nfc_tag(
     user=Depends(require_permission_any(["nfc:assign"])),
 ):
     org_id = user["organization_id"]
-    db = next(get_db_for_org(org_id))
+    db = get_db_for_org(org_id, user.get("schema_name"))
 
     try:
-        # 1 Ensure patient exists
         patient = db.execute(
             text(
-                f'''
+                '''
                 SELECT id
-                FROM "{org_id}".patients
+                FROM "patients"
                 WHERE id = :patient_id
                 '''
             ),
@@ -92,11 +96,25 @@ def assign_nfc_tag(
         if not patient:
             raise HTTPException(404, "Patient not found")
 
-        # 2️ Upsert NFC tag
+        existing_tag = db.execute(
+            text(
+                '''
+                SELECT tag_id
+                FROM "nfc_tags"
+                WHERE patient_id = :patient_id
+                  AND status = 'active'
+                '''
+            ),
+            {"patient_id": payload.patient_id},
+        ).fetchone()
+
+        if existing_tag and existing_tag.tag_id != payload.tag_id:
+            raise HTTPException(409, "Patient already has an active NFC tag")
+
         db.execute(
             text(
-                f'''
-                INSERT INTO "{org_id}".nfc_tags (tag_id, patient_id, status)
+                '''
+                INSERT INTO "nfc_tags" (tag_id, patient_id, status)
                 VALUES (:tag_id, :patient_id, 'active')
                 ON CONFLICT (tag_id)
                 DO UPDATE SET
@@ -112,7 +130,6 @@ def assign_nfc_tag(
 
         db.commit()
 
-        # 3️ Publish assignment event 
         publish_event(
             routing_key="nfc.assigned",
             payload={
