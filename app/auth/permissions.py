@@ -1,10 +1,14 @@
+import yaml
 from pathlib import Path
 
-from app.auth.permissions_store import PermissionsStore
-
 PERMISSIONS_FILE = Path(__file__).parent / "permissions.yml"
-_permissions_store = PermissionsStore(PERMISSIONS_FILE)
+
+with open(PERMISSIONS_FILE, "r") as f:
+    _permissions = yaml.safe_load(f)["roles"]
 
 
 def get_permissions_for_roles(roles: list[str]) -> set[str]:
-    return _permissions_store.get_permissions_for_roles(roles)
+    permissions = set()
+    for role in roles:
+        permissions.update(_permissions.get(role, []))
+    return permissions
