@@ -28,3 +28,10 @@ class NFCDeactivateResponse(BaseModel):
     tag_id: str
     organization_id: str
     status: str
+
+
+class NFCGetResponse(BaseModel):
+    tag_id: str
+    patient_id: str
+    organization_id: str
+    status: str

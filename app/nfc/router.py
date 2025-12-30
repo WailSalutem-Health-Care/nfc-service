@@ -9,6 +9,7 @@ from app.nfc.schemas import (
     NFCAssignResponse,
     NFCDeactivateRequest,
     NFCDeactivateResponse,
+    NFCGetResponse,
     NFCResolveRequest,
     NFCResolveResponse,
 )
@@ -45,6 +46,32 @@ def resolve_nfc_tag(
         )
 
         return NFCResolveResponse(**result)
+
+    finally:
+        db.close()
+
+
+@router.get(
+    "/{tag_id}",
+    response_model=NFCGetResponse,
+)
+def get_nfc_tag(
+    tag_id: str,
+    user=Depends(require_permission_any(["nfc:read"])),
+):
+    org_id = user["organization_id"]
+    db = get_db_for_org(org_id, user.get("schema_name"))
+
+    try:
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
+
+        result = service.get_tag(
+            organization_id=org_id,
+            tag_id=tag_id,
+        )
+
+        return NFCGetResponse(**result)
 
     finally:
         db.close()
