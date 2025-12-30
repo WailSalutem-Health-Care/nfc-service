@@ -77,6 +77,32 @@ def get_nfc_tag(
         db.close()
 
 
+@router.get(
+    "/patient/{patient_id}",
+    response_model=NFCGetResponse,
+)
+def get_nfc_tag_by_patient(
+    patient_id: str,
+    user=Depends(require_permission_any(["nfc:read"])),
+):
+    org_id = user["organization_id"]
+    db = get_db_for_org(org_id, user.get("schema_name"))
+
+    try:
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
+
+        result = service.get_tag_by_patient(
+            organization_id=org_id,
+            patient_id=patient_id,
+        )
+
+        return NFCGetResponse(**result)
+
+    finally:
+        db.close()
+
+
 @router.post(
     "/assign",
     response_model=NFCAssignResponse,

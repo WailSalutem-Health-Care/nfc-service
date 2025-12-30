@@ -98,3 +98,16 @@ class NfcService:
             "organization_id": organization_id,
             "status": result.status,
         }
+
+    def get_tag_by_patient(self, organization_id: str, patient_id) -> dict:
+        result = self._repository.get_tag_for_patient(patient_id)
+
+        if not result:
+            raise HTTPException(404, "NFC tag not found")
+
+        return {
+            "tag_id": result.tag_id,
+            "patient_id": str(result.patient_id),
+            "organization_id": organization_id,
+            "status": result.status,
+        }

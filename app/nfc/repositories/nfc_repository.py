@@ -43,6 +43,19 @@ class NfcRepository:
             {"patient_id": patient_id},
         ).fetchone()
 
+    def get_tag_for_patient(self, patient_id):
+        return self._db.execute(
+            text(
+                '''
+                SELECT tag_id, patient_id, status
+                FROM "nfc_tags"
+                WHERE patient_id = :patient_id
+                  AND status = 'active'
+                '''
+            ),
+            {"patient_id": patient_id},
+        ).fetchone()
+
     def upsert_tag(self, tag_id: str, patient_id):
         self._db.execute(
             text(
