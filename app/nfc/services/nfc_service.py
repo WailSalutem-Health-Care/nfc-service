@@ -69,3 +69,19 @@ class NfcService:
             "organization_id": organization_id,
             "status": "active",
         }
+
+    def deactivate_tag(self, organization_id: str, tag_id: str) -> dict:
+        result = self._repository.get_tag(tag_id)
+
+        if not result:
+            raise HTTPException(404, "NFC tag not found")
+
+        if result.status != "inactive":
+            self._repository.deactivate_tag(tag_id)
+            self._repository.commit()
+
+        return {
+            "tag_id": tag_id,
+            "organization_id": organization_id,
+            "status": "inactive",
+        }

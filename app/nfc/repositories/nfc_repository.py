@@ -61,5 +61,17 @@ class NfcRepository:
             },
         )
 
+    def deactivate_tag(self, tag_id: str):
+        return self._db.execute(
+            text(
+                '''
+                UPDATE "nfc_tags"
+                SET status = 'inactive'
+                WHERE tag_id = :tag_id
+                '''
+            ),
+            {"tag_id": tag_id},
+        ).rowcount
+
     def commit(self):
         self._db.commit()

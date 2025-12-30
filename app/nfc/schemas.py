@@ -18,3 +18,13 @@ class NFCAssignResponse(BaseModel):
     patient_id: UUID
     organization_id: str
     status: str
+
+
+class NFCDeactivateRequest(BaseModel):
+    tag_id: str
+
+
+class NFCDeactivateResponse(BaseModel):
+    tag_id: str
+    organization_id: str
+    status: str

@@ -7,6 +7,8 @@ from app.nfc.repositories import NfcRepository
 from app.nfc.schemas import (
     NFCAssignRequest,
     NFCAssignResponse,
+    NFCDeactivateRequest,
+    NFCDeactivateResponse,
     NFCResolveRequest,
     NFCResolveResponse,
 )
@@ -72,6 +74,32 @@ def assign_nfc_tag(
         )
 
         return NFCAssignResponse(**result)
+
+    finally:
+        db.close()
+
+
+@router.post(
+    "/deactivate",
+    response_model=NFCDeactivateResponse,
+)
+def deactivate_nfc_tag(
+    payload: NFCDeactivateRequest,
+    user=Depends(require_permission_any(["nfc:update"])),
+):
+    org_id = user["organization_id"]
+    db = get_db_for_org(org_id, user.get("schema_name"))
+
+    try:
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
+
+        result = service.deactivate_tag(
+            organization_id=org_id,
+            tag_id=payload.tag_id,
+        )
+
+        return NFCDeactivateResponse(**result)
 
     finally:
         db.close()
