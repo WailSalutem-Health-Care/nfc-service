@@ -52,32 +52,6 @@ def resolve_nfc_tag(
 
 
 @router.get(
-    "/{tag_id}",
-    response_model=NFCGetResponse,
-)
-def get_nfc_tag(
-    tag_id: str,
-    user=Depends(require_permission_any(["nfc:read"])),
-):
-    org_id = user["organization_id"]
-    db = get_db_for_org(org_id, user.get("schema_name"))
-
-    try:
-        repository = NfcRepository(db)
-        service = NfcService(repository, publish_event)
-
-        result = service.get_tag(
-            organization_id=org_id,
-            tag_id=tag_id,
-        )
-
-        return NFCGetResponse(**result)
-
-    finally:
-        db.close()
-
-
-@router.get(
     "/patient/{patient_id}",
     response_model=NFCGetResponse,
 )
@@ -95,6 +69,54 @@ def get_nfc_tag_by_patient(
         result = service.get_tag_by_patient(
             organization_id=org_id,
             patient_id=patient_id,
+        )
+
+        return NFCGetResponse(**result)
+
+    finally:
+        db.close()
+
+
+@router.get(
+    "/",
+    response_model=list[NFCGetResponse],
+)
+def get_all_nfc_tags(
+    user=Depends(require_permission_any(["nfc:read"])),
+):
+    org_id = user["organization_id"]
+    db = get_db_for_org(org_id, user.get("schema_name"))
+
+    try:
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
+
+        results = service.get_all_tags(organization_id=org_id)
+
+        return [NFCGetResponse(**item) for item in results]
+
+    finally:
+        db.close()
+
+
+@router.get(
+    "/{tag_id}",
+    response_model=NFCGetResponse,
+)
+def get_nfc_tag(
+    tag_id: str,
+    user=Depends(require_permission_any(["nfc:read"])),
+):
+    org_id = user["organization_id"]
+    db = get_db_for_org(org_id, user.get("schema_name"))
+
+    try:
+        repository = NfcRepository(db)
+        service = NfcService(repository, publish_event)
+
+        result = service.get_tag(
+            organization_id=org_id,
+            tag_id=tag_id,
         )
 
         return NFCGetResponse(**result)

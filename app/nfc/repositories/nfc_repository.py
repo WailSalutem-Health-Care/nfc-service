@@ -18,6 +18,16 @@ class NfcRepository:
             {"tag_id": tag_id},
         ).fetchone()
 
+    def get_all_tags(self):
+        return self._db.execute(
+            text(
+                '''
+                SELECT tag_id, patient_id, status
+                FROM "nfc_tags"
+                '''
+            )
+        ).fetchall()
+
     def get_patient(self, patient_id):
         return self._db.execute(
             text(

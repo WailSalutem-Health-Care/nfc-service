@@ -111,3 +111,16 @@ class NfcService:
             "organization_id": organization_id,
             "status": result.status,
         }
+
+    def get_all_tags(self, organization_id: str) -> list[dict]:
+        results = self._repository.get_all_tags()
+
+        return [
+            {
+                "tag_id": row.tag_id,
+                "patient_id": str(row.patient_id),
+                "organization_id": organization_id,
+                "status": row.status,
+            }
+            for row in results
+        ]
