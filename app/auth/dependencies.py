@@ -13,8 +13,16 @@ def get_current_user(
     payload = decode_jwt(credentials.credentials)
 
     user_id = payload.get("sub")
-    organization_id = payload.get("organisationId")
-    schema_name = payload.get("schema") or payload.get("schema_name")
+    organization_id = (
+        payload.get("organisationId")
+        or payload.get("organizationId")
+        or payload.get("organizationID")
+    )
+    schema_name = (
+        payload.get("schema")
+        or payload.get("schema_name")
+        or payload.get("orgSchemaName")
+    )
     roles = payload.get("realm_access", {}).get("roles", [])
 
     if not user_id or not organization_id:
