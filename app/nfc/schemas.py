@@ -1,3 +1,4 @@
+from typing import List, Optional
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -35,3 +36,8 @@ class NFCGetResponse(BaseModel):
     patient_id: str
     organization_id: str
     status: str
+
+
+class NFCListResponse(BaseModel):
+    items: List[NFCGetResponse]
+    next_cursor: Optional[str]

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, status
 
 from app.auth.dependencies import require_permission_any
 from app.db.session import get_db_for_org
@@ -10,6 +12,7 @@ from app.nfc.schemas import (
     NFCDeactivateRequest,
     NFCDeactivateResponse,
     NFCGetResponse,
+    NFCListResponse,
     NFCResolveRequest,
     NFCResolveResponse,
 )
@@ -79,9 +82,11 @@ def get_nfc_tag_by_patient(
 
 @router.get(
     "/",
-    response_model=list[NFCGetResponse],
+    response_model=NFCListResponse,
 )
 def get_all_nfc_tags(
+    limit: int = Query(50, ge=1, le=100),
+    cursor: Optional[str] = Query(None),
     user=Depends(require_permission_any(["nfc:read"])),
 ):
     org_id = user["organization_id"]
@@ -91,9 +96,13 @@ def get_all_nfc_tags(
         repository = NfcRepository(db)
         service = NfcService(repository, publish_event)
 
-        results = service.get_all_tags(organization_id=org_id)
+        result = service.get_all_tags(
+            organization_id=org_id,
+            limit=limit,
+            cursor=cursor,
+        )
 
-        return [NFCGetResponse(**item) for item in results]
+        return NFCListResponse(**result)
 
     finally:
         db.close()

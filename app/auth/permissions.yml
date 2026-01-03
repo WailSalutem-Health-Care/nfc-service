@@ -6,6 +6,3 @@ roles:
     - nfc:assign
     - nfc:read
     - nfc:update
-
-  SUPER_ADMIN:
-    - nfc:delete

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException
 
 from app.nfc.repositories import NfcRepository
@@ -112,15 +114,24 @@ class NfcService:
             "status": result.status,
         }
 
-    def get_all_tags(self, organization_id: str) -> list[dict]:
-        results = self._repository.get_all_tags()
+    def get_all_tags(self, organization_id: str, limit: int, cursor: Optional[str]) -> dict:
+        fetch_limit = limit + 1
+        results = self._repository.get_all_tags(limit=fetch_limit, cursor=cursor)
 
-        return [
+        has_more = len(results) > limit
+        trimmed = results[:limit]
+        items = [
             {
                 "tag_id": row.tag_id,
                 "patient_id": str(row.patient_id),
                 "organization_id": organization_id,
                 "status": row.status,
             }
-            for row in results
+            for row in trimmed
         ]
+        next_cursor = trimmed[-1].tag_id if has_more and trimmed else None
+
+        return {
+            "items": items,
+            "next_cursor": next_cursor,
+        }

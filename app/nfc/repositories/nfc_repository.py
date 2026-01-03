@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -18,14 +20,18 @@ class NfcRepository:
             {"tag_id": tag_id},
         ).fetchone()
 
-    def get_all_tags(self):
+    def get_all_tags(self, limit: int, cursor: Optional[str]):
         return self._db.execute(
             text(
                 '''
                 SELECT tag_id, patient_id, status
                 FROM "nfc_tags"
+                WHERE (:cursor IS NULL OR tag_id > :cursor)
+                ORDER BY tag_id ASC
+                LIMIT :limit
                 '''
-            )
+            ),
+            {"limit": limit, "cursor": cursor},
         ).fetchall()
 
     def get_patient(self, patient_id):
