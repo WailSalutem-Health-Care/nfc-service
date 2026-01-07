@@ -7,3 +7,4 @@ python-dotenv
 requests
 python-jose[cryptography]
 PyYAML
+alembic

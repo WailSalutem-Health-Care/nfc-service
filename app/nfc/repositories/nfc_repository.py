@@ -20,19 +20,51 @@ class NfcRepository:
             {"tag_id": tag_id},
         ).fetchone()
 
-    def get_all_tags(self, limit: int, cursor: Optional[str]):
+    def get_all_tags(
+        self,
+        limit: int,
+        cursor: Optional[str],
+        status: Optional[str],
+        search: Optional[str],
+    ):
+        search_pattern = f"%{search}%" if search else None
         return self._db.execute(
             text(
                 '''
                 SELECT tag_id, patient_id, status
                 FROM "nfc_tags"
                 WHERE (:cursor IS NULL OR tag_id > :cursor)
+                  AND (:status IS NULL OR status = :status)
+                  AND (
+                    :search IS NULL
+                    OR tag_id ILIKE :search_pattern
+                    OR CAST(patient_id AS text) ILIKE :search_pattern
+                  )
                 ORDER BY tag_id ASC
                 LIMIT :limit
                 '''
             ),
-            {"limit": limit, "cursor": cursor},
+            {
+                "limit": limit,
+                "cursor": cursor,
+                "status": status,
+                "search": search,
+                "search_pattern": search_pattern,
+            },
         ).fetchall()
+
+    def get_stats(self):
+        return self._db.execute(
+            text(
+                '''
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+                    SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive
+                FROM "nfc_tags"
+                '''
+            )
+        ).fetchone()
 
     def get_patient(self, patient_id):
         return self._db.execute(
@@ -96,6 +128,18 @@ class NfcRepository:
                 '''
                 UPDATE "nfc_tags"
                 SET status = 'inactive'
+                WHERE tag_id = :tag_id
+                '''
+            ),
+            {"tag_id": tag_id},
+        ).rowcount
+
+    def reactivate_tag(self, tag_id: str):
+        return self._db.execute(
+            text(
+                '''
+                UPDATE "nfc_tags"
+                SET status = 'active'
                 WHERE tag_id = :tag_id
                 '''
             ),
