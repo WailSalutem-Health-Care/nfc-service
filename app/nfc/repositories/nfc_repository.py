@@ -134,6 +134,28 @@ class NfcRepository:
             {"tag_id": tag_id},
         ).rowcount
 
+    def deactivate_tags_for_patient(self, patient_id):
+        return self._db.execute(
+            text(
+                '''
+                UPDATE "nfc_tags"
+                SET status = 'inactive'
+                WHERE patient_id = :patient_id
+                '''
+            ),
+            {"patient_id": patient_id},
+        ).rowcount
+
+    def deactivate_all_tags(self):
+        return self._db.execute(
+            text(
+                '''
+                UPDATE "nfc_tags"
+                SET status = 'inactive'
+                '''
+            )
+        ).rowcount
+
     def reactivate_tag(self, tag_id: str):
         return self._db.execute(
             text(

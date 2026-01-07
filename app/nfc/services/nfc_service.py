@@ -210,3 +210,11 @@ class NfcService:
             "active": int(stats.active or 0),
             "inactive": int(stats.inactive or 0),
         }
+
+    def deactivate_tags_for_patient(self, patient_id):
+        self._repository.deactivate_tags_for_patient(patient_id)
+        self._repository.commit()
+
+    def deactivate_all_tags(self):
+        self._repository.deactivate_all_tags()
+        self._repository.commit()
