@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfc-service
+  namespace: wailsalutem-suite
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfc-service
+  template:
+    metadata:
+      labels:
+        app: nfc-service
+    spec:
+      containers:
+        - name: nfc-service
+          image: nfc-service:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: wailsalutem-backend-config
+            - secretRef:
+                name: wailsalutem-backend-secrets
