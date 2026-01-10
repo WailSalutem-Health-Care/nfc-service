@@ -25,10 +25,10 @@ jobs:
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^(app/|requirements.txt|Dockerfile|alembic/)'; then
             echo "code_changed=true" >> $GITHUB_OUTPUT
-            echo "📝 Code changes detected - build required"
+            echo "Code changes detected - build required"
           else
             echo "code_changed=false" >> $GITHUB_OUTPUT
-            echo "✅ Only config/k8s files changed - skipping build"
+            echo "Only config/k8s files changed - skipping build"
           fi
       
       - name: Login to OpenShift
