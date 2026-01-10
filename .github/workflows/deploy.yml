@@ -1,0 +1,64 @@
+name: Deploy nfc-service
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'nfc-api-documentation.yaml'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install oc
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xzf oc.tar.gz
+          sudo mv oc /usr/local/bin/oc
+      - name: Check if code changed
+        id: code_check
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^(app/|requirements.txt|Dockerfile|alembic/)'; then
+            echo "code_changed=true" >> $GITHUB_OUTPUT
+            echo "Code changes detected - build required"
+          else
+            echo "code_changed=false" >> $GITHUB_OUTPUT
+            echo "Only config/k8s files changed - skipping build"
+          fi
+      
+      - name: Login to OpenShift
+        if: steps.code_check.outputs.code_changed == 'true'
+        run: |
+          oc login $OPENSHIFT_SERVER \
+            --token=$OPENSHIFT_TOKEN \
+            --insecure-skip-tls-verify=true
+        env:
+          OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
+          OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+      
+      - name: Trigger Build
+        if: steps.code_check.outputs.code_changed == 'true'
+        run: |
+          oc start-build nfc-service -n wailsalutem-suite --follow
+      
+      - name: Verify Deployment
+        if: steps.code_check.outputs.code_changed == 'true'
+        run: |
+          oc rollout status deployment/nfc-service -n wailsalutem-suite --timeout=5m
+      
+      - name: Apply K8s Config Changes
+        if: steps.code_check.outputs.code_changed == 'false'
+        run: |
+          oc login $OPENSHIFT_SERVER \
+            --token=$OPENSHIFT_TOKEN \
+            --insecure-skip-tls-verify=true
+          oc apply -f k8s/config/ -n wailsalutem-suite
+          oc apply -f k8s/base/ -n wailsalutem-suite
+        env:
+          OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
+          OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
