@@ -1,0 +1,8 @@
+roles:
+  CAREGIVER:
+    - nfc:resolve
+
+  ORG_ADMIN:
+    - nfc:assign
+    - nfc:read
+    - nfc:update
