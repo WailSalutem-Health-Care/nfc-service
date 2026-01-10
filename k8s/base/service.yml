@@ -7,5 +7,6 @@ spec:
   selector:
     app: nfc-service
   ports:
-    - port: 80
-      targetPort: 8001
+    - name: http
+      port: 80
+      targetPort: 8000

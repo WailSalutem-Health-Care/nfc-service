@@ -20,3 +20,11 @@ jobs:
         env:
           OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
           OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+      
+      - name: Trigger Build
+        run: |
+          oc start-build nfc-service -n wailsalutem-suite --follow
+      
+      - name: Verify Deployment
+        run: |
+          oc rollout status deployment/nfc-service -n wailsalutem-suite --timeout=5m
