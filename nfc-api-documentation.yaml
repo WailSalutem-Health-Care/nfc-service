@@ -1,0 +1,443 @@
+openapi: 3.0.3
+info:
+  title: NFC Service API
+  description: |
+    API documentation for the NFC Service which manages NFC tag assignments and lookups.
+
+    ## Authentication
+    All endpoints require Bearer token authentication.
+    Header: `Authorization: Bearer <your-token>`
+  version: 1.0.0
+  contact:
+    name: WailSalutem Health Care
+    email: support@wailsalutem.com
+
+servers:
+  - url: http://localhost:8001
+    description: Local development
+  - url: https://api.wailsalutem.com
+    description: Production
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    NFCResolveRequest:
+      type: object
+      required:
+        - tag_id
+      properties:
+        tag_id:
+          type: string
+          example: "04A224B3C55E80"
+
+    NFCResolveResponse:
+      type: object
+      properties:
+        patient_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+
+    NFCAssignRequest:
+      type: object
+      required:
+        - tag_id
+        - patient_id
+      properties:
+        tag_id:
+          type: string
+          example: "04A224B3C55E80"
+        patient_id:
+          type: string
+          format: uuid
+
+    NFCAssignResponse:
+      type: object
+      properties:
+        tag_id:
+          type: string
+        patient_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: assigned
+
+    NFCDeactivateRequest:
+      type: object
+      required:
+        - tag_id
+      properties:
+        tag_id:
+          type: string
+          example: "04A224B3C55E80"
+
+    NFCDeactivateResponse:
+      type: object
+      properties:
+        tag_id:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: deactivated
+
+    NFCReactivateRequest:
+      type: object
+      required:
+        - tag_id
+      properties:
+        tag_id:
+          type: string
+          example: "04A224B3C55E80"
+
+    NFCReactivateResponse:
+      type: object
+      properties:
+        tag_id:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: active
+
+    NFCReplaceRequest:
+      type: object
+      required:
+        - old_tag_id
+        - new_tag_id
+      properties:
+        old_tag_id:
+          type: string
+          example: "04A224B3C55E80"
+        new_tag_id:
+          type: string
+          example: "04A224B3C55E81"
+
+    NFCReplaceResponse:
+      type: object
+      properties:
+        old_tag_id:
+          type: string
+        new_tag_id:
+          type: string
+        patient_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: active
+
+    NFCGetResponse:
+      type: object
+      properties:
+        tag_id:
+          type: string
+        patient_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+
+    NFCListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NFCGetResponse'
+        next_cursor:
+          type: string
+          nullable: true
+
+    NFCStatsResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        inactive:
+          type: integer
+
+paths:
+  /nfc/resolve:
+    post:
+      tags:
+        - NFC
+      summary: Resolve NFC tag
+      description: Resolve an NFC tag to a patient.
+      operationId: resolveNfcTag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NFCResolveRequest'
+      responses:
+        '200':
+          description: NFC tag resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCResolveResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/patient/{patient_id}:
+    get:
+      tags:
+        - NFC
+      summary: Get NFC tag by patient
+      description: Get NFC tag details for a patient.
+      operationId: getNfcTagByPatient
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: NFC tag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCGetResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /nfc/:
+    get:
+      tags:
+        - NFC
+      summary: List NFC tags
+      description: List NFC tags in the organization.
+      operationId: listNfcTags
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of NFC tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCListResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/stats:
+    get:
+      tags:
+        - NFC
+      summary: Get NFC tag stats
+      description: Get total, active, and inactive counts.
+      operationId: getNfcStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: NFC tag stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCStatsResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/{tag_id}:
+    get:
+      tags:
+        - NFC
+      summary: Get NFC tag by ID
+      description: Get NFC tag details.
+      operationId: getNfcTag
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tag_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: NFC tag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCGetResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+  /nfc/assign:
+    post:
+      tags:
+        - NFC
+      summary: Assign NFC tag
+      description: Assign an NFC tag to a patient.
+      operationId: assignNfcTag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NFCAssignRequest'
+      responses:
+        '201':
+          description: NFC tag assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCAssignResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/deactivate:
+    post:
+      tags:
+        - NFC
+      summary: Deactivate NFC tag
+      description: Deactivate an NFC tag.
+      operationId: deactivateNfcTag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NFCDeactivateRequest'
+      responses:
+        '200':
+          description: NFC tag deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCDeactivateResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/reactivate:
+    post:
+      tags:
+        - NFC
+      summary: Reactivate NFC tag
+      description: Reactivate an NFC tag.
+      operationId: reactivateNfcTag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NFCReactivateRequest'
+      responses:
+        '200':
+          description: NFC tag reactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCReactivateResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /nfc/replace:
+    post:
+      tags:
+        - NFC
+      summary: Replace NFC tag
+      description: Replace an NFC tag with a new one for the same patient.
+      operationId: replaceNfcTag
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NFCReplaceRequest'
+      responses:
+        '200':
+          description: NFC tag replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFCReplaceResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
