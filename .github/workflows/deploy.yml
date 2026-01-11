@@ -1,0 +1,76 @@
+name: Build & Deploy (OKD)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - '*-api-documentation.yaml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install oc
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xzf oc.tar.gz
+          sudo mv oc /usr/local/bin/oc
+
+      - name: Login to OpenShift
+        run: |
+          oc login "${{ secrets.OPENSHIFT_SERVER }}" \
+            --token="${{ secrets.OPENSHIFT_TOKEN }}" \
+            --insecure-skip-tls-verify=true
+          oc project wailsalutem-suite
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+          CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)"
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          if echo "$CHANGED" | grep -qE '^k8s/'; then
+            echo "k8s_changed=true" >> $GITHUB_OUTPUT
+            echo " K8s manifests changed"
+          else
+            echo "k8s_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED" | grep -qE '^(app/|requirements\.txt|Dockerfile|alembic/)'; then
+            echo "code_changed=true" >> $GITHUB_OUTPUT
+            echo " Code changed - build required"
+          else
+            echo "code_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply Kubernetes manifests (if changed)
+        if: steps.changes.outputs.k8s_changed == 'true'
+        run: |
+          echo "Applying Kubernetes manifests..."
+          oc apply -f k8s/config/
+          oc apply -f k8s/base/
+
+      - name: Trigger OpenShift build (if code changed)
+        if: steps.changes.outputs.code_changed == 'true'
+        run: |
+          echo "Building new image..."
+          oc start-build nfc-service --follow
+
+      - name: Rollout restart (after build or k8s changes)
+        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.k8s_changed == 'true'
+        run: |
+          echo "Rolling out new deployment..."
+          oc rollout restart deployment/nfc-service
+          oc rollout status deployment/nfc-service --timeout=5m
+          echo "Deployment complete!"

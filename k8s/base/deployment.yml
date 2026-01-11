@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: nfc-service
-          image: nfc-service:latest
+          image: image-registry.openshift-image-registry.svc:5000/wailsalutem-suite/nfc-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           envFrom:
