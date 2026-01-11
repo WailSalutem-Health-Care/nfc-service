@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from fastapi import HTTPException, status
 
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
-KEYCLOAK_URL = os.getenv("KEYCLOAK_BASE_URL")  # Use KEYCLOAK_BASE_URL from configmap
+KEYCLOAK_URL = os.getenv("KEYCLOAK_BASE_URL") 
 ALGORITHMS = ["RS256"]
 
 JWKS_URL = (

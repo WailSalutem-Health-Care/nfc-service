@@ -1,4 +1,5 @@
-name: Deploy nfc-service
+name: Build & Deploy (OKD)
+
 on:
   push:
     branches: [main]
@@ -7,7 +8,8 @@ on:
       - 'docs/**'
       - '.gitignore'
       - 'LICENSE'
-      - 'nfc-api-documentation.yaml'
+      - '*-api-documentation.yaml'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -15,50 +17,60 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Install oc
         run: |
           curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
           tar -xzf oc.tar.gz
           sudo mv oc /usr/local/bin/oc
-      - name: Check if code changed
-        id: code_check
+
+      - name: Login to OpenShift
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^(app/|requirements.txt|Dockerfile|alembic/)'; then
+          oc login "${{ secrets.OPENSHIFT_SERVER }}" \
+            --token="${{ secrets.OPENSHIFT_TOKEN }}" \
+            --insecure-skip-tls-verify=true
+          oc project wailsalutem-suite
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+          CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)"
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          if echo "$CHANGED" | grep -qE '^k8s/'; then
+            echo "k8s_changed=true" >> $GITHUB_OUTPUT
+            echo " K8s manifests changed"
+          else
+            echo "k8s_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED" | grep -qE '^(app/|requirements\.txt|Dockerfile|alembic/)'; then
             echo "code_changed=true" >> $GITHUB_OUTPUT
-            echo "Code changes detected - build required"
+            echo " Code changed - build required"
           else
             echo "code_changed=false" >> $GITHUB_OUTPUT
-            echo "Only config/k8s files changed - skipping build"
           fi
-      
-      - name: Login to OpenShift
-        if: steps.code_check.outputs.code_changed == 'true'
+
+      - name: Apply Kubernetes manifests (if changed)
+        if: steps.changes.outputs.k8s_changed == 'true'
         run: |
-          oc login $OPENSHIFT_SERVER \
-            --token=$OPENSHIFT_TOKEN \
-            --insecure-skip-tls-verify=true
-        env:
-          OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
-          OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
-      
-      - name: Trigger Build
-        if: steps.code_check.outputs.code_changed == 'true'
+          echo "Applying Kubernetes manifests..."
+          oc apply -f k8s/config/
+          oc apply -f k8s/base/
+
+      - name: Trigger OpenShift build (if code changed)
+        if: steps.changes.outputs.code_changed == 'true'
         run: |
-          oc start-build nfc-service -n wailsalutem-suite --follow
-      
-      - name: Verify Deployment
-        if: steps.code_check.outputs.code_changed == 'true'
+          echo "Building new image..."
+          oc start-build nfc-service --follow
+
+      - name: Rollout restart (after build or k8s changes)
+        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.k8s_changed == 'true'
         run: |
-          oc rollout status deployment/nfc-service -n wailsalutem-suite --timeout=5m
-      
-      - name: Apply K8s Config Changes
-        if: steps.code_check.outputs.code_changed == 'false'
-        run: |
-          oc login $OPENSHIFT_SERVER \
-            --token=$OPENSHIFT_TOKEN \
-            --insecure-skip-tls-verify=true
-          oc apply -f k8s/config/ -n wailsalutem-suite
-          oc apply -f k8s/base/ -n wailsalutem-suite
-        env:
-          OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
-          OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+          echo "Rolling out new deployment..."
+          oc rollout restart deployment/nfc-service
+          oc rollout status deployment/nfc-service --timeout=5m
+          echo "Deployment complete!"
