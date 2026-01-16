@@ -10,6 +10,13 @@ class NfcService:
         self._repository = repository
         self._publish_event = event_publisher
 
+    def _serialize_timestamp(self, value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+
     def resolve_tag(self, organization_id: str, tag_id: str) -> dict:
         result = self._repository.get_tag(tag_id)
 
@@ -147,6 +154,8 @@ class NfcService:
             "patient_id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
+            "issued_at": self._serialize_timestamp(result.issued_at),
+            "deactivated_at": self._serialize_timestamp(result.deactivated_at),
         }
 
     def get_tag_by_patient(self, organization_id: str, patient_id) -> dict:
@@ -160,6 +169,8 @@ class NfcService:
             "patient_id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
+            "issued_at": self._serialize_timestamp(result.issued_at),
+            "deactivated_at": self._serialize_timestamp(result.deactivated_at),
         }
 
     def get_all_tags(
@@ -193,6 +204,8 @@ class NfcService:
                 "patient_id": str(row.patient_id),
                 "organization_id": organization_id,
                 "status": row.status,
+                "issued_at": self._serialize_timestamp(row.issued_at),
+                "deactivated_at": self._serialize_timestamp(row.deactivated_at),
             }
             for row in trimmed
         ]

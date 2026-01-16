@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
 
@@ -10,3 +10,5 @@ class NFCTag(Base):
     tag_id = Column(String, nullable=False)
     patient_id = Column(UUID, nullable=False)
     status = Column(String, nullable=False)
+    issued_at = Column(DateTime(timezone=True), nullable=True)
+    deactivated_at = Column(DateTime(timezone=True), nullable=True)

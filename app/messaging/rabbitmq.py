@@ -1,7 +1,9 @@
 import json
 import os
-import pika
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+import pika
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
@@ -39,7 +41,12 @@ def get_channel():
 def publish_event(routing_key: str, payload: dict):
     connection, channel = get_channel()
 
-    payload["timestamp"] = datetime.now(timezone.utc).isoformat()
+    tz_name = os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Amsterdam"
+    try:
+        tz = ZoneInfo(tz_name)
+        payload["timestamp"] = datetime.now(tz).isoformat()
+    except ZoneInfoNotFoundError:
+        payload["timestamp"] = datetime.now(timezone.utc).isoformat()
 
     channel.basic_publish(
         exchange=EXCHANGE_NAME,

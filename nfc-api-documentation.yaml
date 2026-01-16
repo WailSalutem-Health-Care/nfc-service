@@ -158,6 +158,14 @@ components:
           format: uuid
         status:
           type: string
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        deactivated_at:
+          type: string
+          format: date-time
+          nullable: true
 
     NFCListResponse:
       type: object

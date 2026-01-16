@@ -8,3 +8,5 @@ requests
 python-jose[cryptography]
 PyYAML
 alembic
+pytest
+httpx
