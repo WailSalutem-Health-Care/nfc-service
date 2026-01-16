@@ -9,18 +9,18 @@ class NFCResolveRequest(BaseModel):
 
 
 class NFCResolveResponse(BaseModel):
-    patient_id: str
+    id: str
     organization_id: str
 
 
 class NFCAssignRequest(BaseModel):
     tag_id: str
-    patient_id: UUID
+    id: UUID
 
 
 class NFCAssignResponse(BaseModel):
     tag_id: str
-    patient_id: UUID
+    id: UUID
     organization_id: str
     status: str
 
@@ -53,14 +53,14 @@ class NFCReplaceRequest(BaseModel):
 class NFCReplaceResponse(BaseModel):
     old_tag_id: str
     new_tag_id: str
-    patient_id: UUID
+    id: UUID
     organization_id: str
     status: str
 
 
 class NFCGetResponse(BaseModel):
     tag_id: str
-    patient_id: str
+    id: str
     organization_id: str
     status: str
 

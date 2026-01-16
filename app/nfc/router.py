@@ -74,9 +74,9 @@ def get_nfc_tag_by_patient(
         repository = NfcRepository(db)
         service = NfcService(repository, publish_event)
 
-        result = service.get_tag_by_patient(
+        result = service.get_tag_by_id(
             organization_id=org_id,
-            patient_id=patient_id,
+            id=patient_id,
         )
 
         return NFCGetResponse(**result)
@@ -185,7 +185,7 @@ def assign_nfc_tag(
             organization_id=org_id,
             user_id=user["user_id"],
             tag_id=payload.tag_id,
-            patient_id=payload.patient_id,
+            id=payload.id,
         )
 
         return NFCAssignResponse(**result)

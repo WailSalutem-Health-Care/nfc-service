@@ -24,13 +24,13 @@ class NfcService:
             payload={
                 "event": "nfc.resolved",
                 "tag_id": tag_id,
-                "patient_id": str(result.patient_id),
+                "id": str(result.patient_id),
                 "organization_id": organization_id,
             },
         )
 
         return {
-            "patient_id": str(result.patient_id),
+            "id": str(result.patient_id),
             "organization_id": organization_id,
         }
 
@@ -39,19 +39,19 @@ class NfcService:
         organization_id: str,
         user_id: str,
         tag_id: str,
-        patient_id,
+        id,
     ) -> dict:
-        patient = self._repository.get_patient(patient_id)
+        patient = self._repository.get_patient(id)
 
         if not patient:
             raise HTTPException(404, "Patient not found")
 
-        existing_tag = self._repository.get_active_tag_for_patient(patient_id)
+        existing_tag = self._repository.get_active_tag_for_patient(id)
 
         if existing_tag and existing_tag.tag_id != tag_id:
             raise HTTPException(409, "Patient already has an active NFC tag")
 
-        self._repository.upsert_tag(tag_id, patient_id)
+        self._repository.upsert_tag(tag_id, id)
         self._repository.commit()
 
         self._publish_event(
@@ -59,7 +59,7 @@ class NfcService:
             payload={
                 "event": "nfc.assigned",
                 "tag_id": tag_id,
-                "patient_id": str(patient_id),
+                "id": str(id),
                 "organization_id": organization_id,
                 "assigned_by": user_id,
             },
@@ -67,7 +67,7 @@ class NfcService:
 
         return {
             "tag_id": tag_id,
-            "patient_id": patient_id,
+            "id": id,
             "organization_id": organization_id,
             "status": "active",
         }
@@ -131,7 +131,7 @@ class NfcService:
         return {
             "old_tag_id": old_tag_id,
             "new_tag_id": new_tag_id,
-            "patient_id": old_tag.patient_id,
+            "id": old_tag.patient_id,
             "organization_id": organization_id,
             "status": "active",
         }
@@ -144,20 +144,20 @@ class NfcService:
 
         return {
             "tag_id": result.tag_id,
-            "patient_id": str(result.patient_id),
+            "id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
         }
 
-    def get_tag_by_patient(self, organization_id: str, patient_id) -> dict:
-        result = self._repository.get_tag_for_patient(patient_id)
+    def get_tag_by_id(self, organization_id: str, id) -> dict:
+        result = self._repository.get_tag_for_patient(id)
 
         if not result:
             raise HTTPException(404, "NFC tag not found")
 
         return {
             "tag_id": result.tag_id,
-            "patient_id": str(result.patient_id),
+            "id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
         }
@@ -190,7 +190,7 @@ class NfcService:
         items = [
             {
                 "tag_id": row.tag_id,
-                "patient_id": str(row.patient_id),
+                "id": str(row.patient_id),
                 "organization_id": organization_id,
                 "status": row.status,
             }

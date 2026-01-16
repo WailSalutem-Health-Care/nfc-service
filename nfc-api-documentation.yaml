@@ -38,7 +38,7 @@ components:
     NFCResolveResponse:
       type: object
       properties:
-        patient_id:
+        id:
           type: string
           format: uuid
         organization_id:
@@ -49,12 +49,12 @@ components:
       type: object
       required:
         - tag_id
-        - patient_id
+        - id
       properties:
         tag_id:
           type: string
           example: "04A224B3C55E80"
-        patient_id:
+        id:
           type: string
           format: uuid
 
@@ -63,7 +63,7 @@ components:
       properties:
         tag_id:
           type: string
-        patient_id:
+        id:
           type: string
           format: uuid
         organization_id:
@@ -135,7 +135,7 @@ components:
           type: string
         new_tag_id:
           type: string
-        patient_id:
+        id:
           type: string
           format: uuid
         organization_id:
@@ -150,7 +150,7 @@ components:
       properties:
         tag_id:
           type: string
-        patient_id:
+        id:
           type: string
           format: uuid
         organization_id:
