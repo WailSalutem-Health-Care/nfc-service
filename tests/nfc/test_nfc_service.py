@@ -54,12 +54,12 @@ def test_resolve_tag_publishes_event():
         payload={
             "event": "nfc.resolved",
             "tag_id": "tag-1",
-            "patient_id": "123",
+            "id": "123",
             "organization_id": "org-1",
         },
     )
     assert result == {
-        "patient_id": "123",
+        "id": "123",
         "organization_id": "org-1",
     }
 
@@ -101,14 +101,14 @@ def test_assign_tag_same_existing_tag_allows_update():
         payload={
             "event": "nfc.assigned",
             "tag_id": "tag-1",
-            "patient_id": "101",
+            "id": "101",
             "organization_id": "org-1",
             "assigned_by": "user-1",
         },
     )
     assert result == {
         "tag_id": "tag-1",
-        "patient_id": 101,
+        "id": 101,
         "organization_id": "org-1",
         "status": "active",
     }
@@ -258,7 +258,7 @@ def test_replace_tag_happy_path():
     assert result == {
         "old_tag_id": "tag-1",
         "new_tag_id": "tag-2",
-        "patient_id": 101,
+        "id": 101,
         "organization_id": "org-1",
         "status": "active",
     }
@@ -287,24 +287,24 @@ def test_get_tag_success():
 
     assert result == {
         "tag_id": "tag-1",
-        "patient_id": "101",
+        "id": "101",
         "organization_id": "org-1",
         "status": "active",
     }
 
 
-def test_get_tag_by_patient_missing():
+def test_get_tag_by_id_missing():
     service, repository, _publisher = make_service()
     repository.get_tag_for_patient.return_value = None
 
     with pytest.raises(HTTPException) as exc:
-        service.get_tag_by_patient("org-1", 101)
+        service.get_tag_by_id("org-1", 101)
 
     assert exc.value.status_code == 404
     assert exc.value.detail == "NFC tag not found"
 
 
-def test_get_tag_by_patient_success():
+def test_get_tag_by_id_success():
     service, repository, _publisher = make_service()
     repository.get_tag_for_patient.return_value = SimpleNamespace(
         tag_id="tag-1",
@@ -312,11 +312,11 @@ def test_get_tag_by_patient_success():
         status="active",
     )
 
-    result = service.get_tag_by_patient("org-1", 101)
+    result = service.get_tag_by_id("org-1", 101)
 
     assert result == {
         "tag_id": "tag-1",
-        "patient_id": "101",
+        "id": "101",
         "organization_id": "org-1",
         "status": "active",
     }
@@ -352,13 +352,13 @@ def test_get_all_tags_paginates_and_normalizes_search():
         "items": [
             {
                 "tag_id": "tag-1",
-                "patient_id": "101",
+                "id": "101",
                 "organization_id": "org-1",
                 "status": "active",
             },
             {
                 "tag_id": "tag-2",
-                "patient_id": "102",
+                "id": "102",
                 "organization_id": "org-1",
                 "status": "inactive",
             },
