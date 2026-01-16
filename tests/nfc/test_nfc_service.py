@@ -182,6 +182,8 @@ def test_reactivate_tag_skips_if_already_active():
         tag_id="tag-1",
         patient_id=101,
         status="active",
+        issued_at=None,
+        deactivated_at=None,
     )
 
     result = service.reactivate_tag("org-1", "tag-1")
@@ -283,6 +285,8 @@ def test_get_tag_success():
         tag_id="tag-1",
         patient_id=101,
         status="active",
+        issued_at=None,
+        deactivated_at=None,
     )
 
     result = service.get_tag("org-1", "tag-1")
