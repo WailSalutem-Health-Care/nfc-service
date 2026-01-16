@@ -44,7 +44,9 @@ def e2e_client(tmp_path, monkeypatch):
                 CREATE TABLE nfc_tags (
                     tag_id TEXT PRIMARY KEY,
                     patient_id TEXT,
-                    status TEXT
+                    status TEXT,
+                    issued_at TEXT,
+                    deactivated_at TEXT
                 )
                 """
             )
@@ -84,12 +86,12 @@ def test_nfc_workflow_assign_resolve_deactivate_reactivate_replace(e2e_client):
 
     response = client.post(
         "/nfc/assign",
-        json={"tag_id": "tag-1", "id": entity_id},
+        json={"tag_id": "tag-1", "patient_id": entity_id},
     )
     assert response.status_code == 201
     assert response.json() == {
         "tag_id": "tag-1",
-        "id": entity_id,
+        "patient_id": entity_id,
         "organization_id": "org-1",
         "status": "active",
     }
@@ -97,7 +99,7 @@ def test_nfc_workflow_assign_resolve_deactivate_reactivate_replace(e2e_client):
     response = client.post("/nfc/resolve", json={"tag_id": "tag-1"})
     assert response.status_code == 200
     assert response.json() == {
-        "id": entity_id,
+        "patient_id": entity_id,
         "organization_id": "org-1",
     }
 
@@ -148,13 +150,13 @@ def test_replace_tag_conflict_returns_409(e2e_client):
 
     response = client.post(
         "/nfc/assign",
-        json={"tag_id": "tag-1", "id": entity_id},
+        json={"tag_id": "tag-1", "patient_id": entity_id},
     )
     assert response.status_code == 201
 
     response = client.post(
         "/nfc/assign",
-        json={"tag_id": "tag-2", "id": other_entity_id},
+        json={"tag_id": "tag-2", "patient_id": other_entity_id},
     )
     assert response.status_code == 201
 
@@ -172,7 +174,7 @@ def test_resolve_inactive_tag_returns_403(e2e_client):
 
     response = client.post(
         "/nfc/assign",
-        json={"tag_id": "tag-1", "id": entity_id},
+        json={"tag_id": "tag-1", "patient_id": entity_id},
     )
     assert response.status_code == 201
 

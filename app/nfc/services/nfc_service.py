@@ -10,6 +10,13 @@ class NfcService:
         self._repository = repository
         self._publish_event = event_publisher
 
+    def _serialize_timestamp(self, value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+
     def resolve_tag(self, organization_id: str, tag_id: str) -> dict:
         result = self._repository.get_tag(tag_id)
 
@@ -24,13 +31,13 @@ class NfcService:
             payload={
                 "event": "nfc.resolved",
                 "tag_id": tag_id,
-                "id": str(result.patient_id),
+                "patient_id": str(result.patient_id),
                 "organization_id": organization_id,
             },
         )
 
         return {
-            "id": str(result.patient_id),
+            "patient_id": str(result.patient_id),
             "organization_id": organization_id,
         }
 
@@ -39,19 +46,19 @@ class NfcService:
         organization_id: str,
         user_id: str,
         tag_id: str,
-        id,
+        patient_id,
     ) -> dict:
-        patient = self._repository.get_patient(id)
+        patient = self._repository.get_patient(patient_id)
 
         if not patient:
             raise HTTPException(404, "Patient not found")
 
-        existing_tag = self._repository.get_active_tag_for_patient(id)
+        existing_tag = self._repository.get_active_tag_for_patient(patient_id)
 
         if existing_tag and existing_tag.tag_id != tag_id:
             raise HTTPException(409, "Patient already has an active NFC tag")
 
-        self._repository.upsert_tag(tag_id, id)
+        self._repository.upsert_tag(tag_id, patient_id)
         self._repository.commit()
 
         self._publish_event(
@@ -59,7 +66,7 @@ class NfcService:
             payload={
                 "event": "nfc.assigned",
                 "tag_id": tag_id,
-                "id": str(id),
+                "patient_id": str(patient_id),
                 "organization_id": organization_id,
                 "assigned_by": user_id,
             },
@@ -67,7 +74,7 @@ class NfcService:
 
         return {
             "tag_id": tag_id,
-            "id": id,
+            "patient_id": patient_id,
             "organization_id": organization_id,
             "status": "active",
         }
@@ -131,7 +138,7 @@ class NfcService:
         return {
             "old_tag_id": old_tag_id,
             "new_tag_id": new_tag_id,
-            "id": old_tag.patient_id,
+            "patient_id": old_tag.patient_id,
             "organization_id": organization_id,
             "status": "active",
         }
@@ -144,22 +151,26 @@ class NfcService:
 
         return {
             "tag_id": result.tag_id,
-            "id": str(result.patient_id),
+            "patient_id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
+            "issued_at": self._serialize_timestamp(result.issued_at),
+            "deactivated_at": self._serialize_timestamp(result.deactivated_at),
         }
 
-    def get_tag_by_id(self, organization_id: str, id) -> dict:
-        result = self._repository.get_tag_for_patient(id)
+    def get_tag_by_patient(self, organization_id: str, patient_id) -> dict:
+        result = self._repository.get_tag_for_patient(patient_id)
 
         if not result:
             raise HTTPException(404, "NFC tag not found")
 
         return {
             "tag_id": result.tag_id,
-            "id": str(result.patient_id),
+            "patient_id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
+            "issued_at": self._serialize_timestamp(result.issued_at),
+            "deactivated_at": self._serialize_timestamp(result.deactivated_at),
         }
 
     def get_all_tags(
@@ -190,9 +201,11 @@ class NfcService:
         items = [
             {
                 "tag_id": row.tag_id,
-                "id": str(row.patient_id),
+                "patient_id": str(row.patient_id),
                 "organization_id": organization_id,
                 "status": row.status,
+                "issued_at": self._serialize_timestamp(row.issued_at),
+                "deactivated_at": self._serialize_timestamp(row.deactivated_at),
             }
             for row in trimmed
         ]

@@ -54,12 +54,12 @@ def test_resolve_tag_publishes_event():
         payload={
             "event": "nfc.resolved",
             "tag_id": "tag-1",
-            "id": "123",
+            "patient_id": "123",
             "organization_id": "org-1",
         },
     )
     assert result == {
-        "id": "123",
+        "patient_id": "123",
         "organization_id": "org-1",
     }
 
@@ -101,14 +101,14 @@ def test_assign_tag_same_existing_tag_allows_update():
         payload={
             "event": "nfc.assigned",
             "tag_id": "tag-1",
-            "id": "101",
+            "patient_id": "101",
             "organization_id": "org-1",
             "assigned_by": "user-1",
         },
     )
     assert result == {
         "tag_id": "tag-1",
-        "id": 101,
+        "patient_id": 101,
         "organization_id": "org-1",
         "status": "active",
     }
@@ -150,6 +150,8 @@ def test_deactivate_tag_changes_status():
         tag_id="tag-1",
         patient_id=101,
         status="active",
+        issued_at=None,
+        deactivated_at=None,
     )
 
     result = service.deactivate_tag("org-1", "tag-1")
@@ -258,7 +260,7 @@ def test_replace_tag_happy_path():
     assert result == {
         "old_tag_id": "tag-1",
         "new_tag_id": "tag-2",
-        "id": 101,
+        "patient_id": 101,
         "organization_id": "org-1",
         "status": "active",
     }
@@ -287,38 +289,44 @@ def test_get_tag_success():
 
     assert result == {
         "tag_id": "tag-1",
-        "id": "101",
+        "patient_id": "101",
         "organization_id": "org-1",
         "status": "active",
+        "issued_at": None,
+        "deactivated_at": None,
     }
 
 
-def test_get_tag_by_id_missing():
+def test_get_tag_by_patient_missing():
     service, repository, _publisher = make_service()
     repository.get_tag_for_patient.return_value = None
 
     with pytest.raises(HTTPException) as exc:
-        service.get_tag_by_id("org-1", 101)
+        service.get_tag_by_patient("org-1", 101)
 
     assert exc.value.status_code == 404
     assert exc.value.detail == "NFC tag not found"
 
 
-def test_get_tag_by_id_success():
+def test_get_tag_by_patient_success():
     service, repository, _publisher = make_service()
     repository.get_tag_for_patient.return_value = SimpleNamespace(
         tag_id="tag-1",
         patient_id=101,
         status="active",
+        issued_at=None,
+        deactivated_at=None,
     )
 
-    result = service.get_tag_by_id("org-1", 101)
+    result = service.get_tag_by_patient("org-1", 101)
 
     assert result == {
         "tag_id": "tag-1",
-        "id": "101",
+        "patient_id": "101",
         "organization_id": "org-1",
         "status": "active",
+        "issued_at": None,
+        "deactivated_at": None,
     }
 
 
@@ -335,9 +343,9 @@ def test_get_all_tags_invalid_status():
 def test_get_all_tags_paginates_and_normalizes_search():
     service, repository, _publisher = make_service()
     repository.get_all_tags.return_value = [
-        SimpleNamespace(tag_id="tag-1", patient_id=101, status="active"),
-        SimpleNamespace(tag_id="tag-2", patient_id=102, status="inactive"),
-        SimpleNamespace(tag_id="tag-3", patient_id=103, status="active"),
+        SimpleNamespace(tag_id="tag-1", patient_id=101, status="active", issued_at=None, deactivated_at=None),
+        SimpleNamespace(tag_id="tag-2", patient_id=102, status="inactive", issued_at=None, deactivated_at=None),
+        SimpleNamespace(tag_id="tag-3", patient_id=103, status="active", issued_at=None, deactivated_at=None),
     ]
 
     result = service.get_all_tags("org-1", limit=2, cursor=None, status=None, search="  ")
@@ -352,15 +360,19 @@ def test_get_all_tags_paginates_and_normalizes_search():
         "items": [
             {
                 "tag_id": "tag-1",
-                "id": "101",
+                "patient_id": "101",
                 "organization_id": "org-1",
                 "status": "active",
+                "issued_at": None,
+                "deactivated_at": None,
             },
             {
                 "tag_id": "tag-2",
-                "id": "102",
+                "patient_id": "102",
                 "organization_id": "org-1",
                 "status": "inactive",
+                "issued_at": None,
+                "deactivated_at": None,
             },
         ],
         "next_cursor": "tag-2",
