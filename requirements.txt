@@ -10,3 +10,4 @@ PyYAML
 alembic
 pytest
 httpx
+prometheus-fastapi-instrumentator

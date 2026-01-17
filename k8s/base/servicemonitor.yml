@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nfc-service
+  namespace: wailsalutem-suite
+spec:
+  selector:
+    matchLabels:
+      app: nfc-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

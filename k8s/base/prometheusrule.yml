@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nfc-service
+  namespace: wailsalutem-suite
+spec:
+  groups:
+    - name: nfc-service.rules
+      rules:
+        - alert: NfcServiceHigh5xxRate
+          expr: |
+            sum(rate(http_requests_total{job="nfc-service",status=~"5.."}[5m]))
+              /
+            sum(rate(http_requests_total{job="nfc-service"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High 5xx error rate on nfc-service"
+            description: "More than 5% of requests are failing with 5xx for 5 minutes."
+        - alert: NfcServiceHighLatencyP95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="nfc-service"}[5m]))
+              by (le)
+            ) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High latency on nfc-service (p95 > 1s)"
+            description: "P95 latency above 1s for 10 minutes."
