@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import HTTPException
 
 from app.nfc.repositories import NfcRepository
+from app.observability.metrics import nfc_metrics
 
 
 class NfcService:
@@ -10,29 +11,37 @@ class NfcService:
         self._repository = repository
         self._publish_event = event_publisher
 
+    def _serialize_timestamp(self, value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+
     def resolve_tag(self, organization_id: str, tag_id: str) -> dict:
-        result = self._repository.get_tag(tag_id)
+        with nfc_metrics.track_operation("resolve"):
+            result = self._repository.get_tag(tag_id)
 
-        if not result:
-            raise HTTPException(404, "NFC tag not found")
+            if not result:
+                raise HTTPException(404, "NFC tag not found")
 
-        if result.status != "active":
-            raise HTTPException(403, "NFC tag is not active")
+            if result.status != "active":
+                raise HTTPException(403, "NFC tag is not active")
 
-        self._publish_event(
-            routing_key="nfc.resolved",
-            payload={
-                "event": "nfc.resolved",
-                "tag_id": tag_id,
+            self._publish_event(
+                routing_key="nfc.resolved",
+                payload={
+                    "event": "nfc.resolved",
+                    "tag_id": tag_id,
+                    "patient_id": str(result.patient_id),
+                    "organization_id": organization_id,
+                },
+            )
+
+            return {
                 "patient_id": str(result.patient_id),
                 "organization_id": organization_id,
-            },
-        )
-
-        return {
-            "patient_id": str(result.patient_id),
-            "organization_id": organization_id,
-        }
+            }
 
     def assign_tag(
         self,
@@ -41,68 +50,71 @@ class NfcService:
         tag_id: str,
         patient_id,
     ) -> dict:
-        patient = self._repository.get_patient(patient_id)
+        with nfc_metrics.track_operation("assign"):
+            patient = self._repository.get_patient(patient_id)
 
-        if not patient:
-            raise HTTPException(404, "Patient not found")
+            if not patient:
+                raise HTTPException(404, "Patient not found")
 
-        existing_tag = self._repository.get_active_tag_for_patient(patient_id)
+            existing_tag = self._repository.get_active_tag_for_patient(patient_id)
 
-        if existing_tag and existing_tag.tag_id != tag_id:
-            raise HTTPException(409, "Patient already has an active NFC tag")
+            if existing_tag and existing_tag.tag_id != tag_id:
+                raise HTTPException(409, "Patient already has an active NFC tag")
 
-        self._repository.upsert_tag(tag_id, patient_id)
-        self._repository.commit()
+            self._repository.upsert_tag(tag_id, patient_id)
+            self._repository.commit()
 
-        self._publish_event(
-            routing_key="nfc.assigned",
-            payload={
-                "event": "nfc.assigned",
+            self._publish_event(
+                routing_key="nfc.assigned",
+                payload={
+                    "event": "nfc.assigned",
+                    "tag_id": tag_id,
+                    "patient_id": str(patient_id),
+                    "organization_id": organization_id,
+                    "assigned_by": user_id,
+                },
+            )
+
+            return {
                 "tag_id": tag_id,
-                "patient_id": str(patient_id),
+                "patient_id": patient_id,
                 "organization_id": organization_id,
-                "assigned_by": user_id,
-            },
-        )
-
-        return {
-            "tag_id": tag_id,
-            "patient_id": patient_id,
-            "organization_id": organization_id,
-            "status": "active",
-        }
+                "status": "active",
+            }
 
     def deactivate_tag(self, organization_id: str, tag_id: str) -> dict:
-        result = self._repository.get_tag(tag_id)
+        with nfc_metrics.track_operation("deactivate"):
+            result = self._repository.get_tag(tag_id)
 
-        if not result:
-            raise HTTPException(404, "NFC tag not found")
+            if not result:
+                raise HTTPException(404, "NFC tag not found")
 
-        if result.status != "inactive":
-            self._repository.deactivate_tag(tag_id)
-            self._repository.commit()
+            if result.status != "inactive":
+                self._repository.deactivate_tag(tag_id)
+                self._repository.commit()
 
-        return {
-            "tag_id": tag_id,
-            "organization_id": organization_id,
-            "status": "inactive",
-        }
+            return {
+                "tag_id": tag_id,
+                "organization_id": organization_id,
+                "status": "inactive",
+            }
 
     def reactivate_tag(self, organization_id: str, tag_id: str) -> dict:
-        result = self._repository.get_tag(tag_id)
+        with nfc_metrics.track_operation("reactivate"):
+            result = self._repository.get_tag(tag_id)
 
-        if not result:
-            raise HTTPException(404, "NFC tag not found")
+            if not result:
+                raise HTTPException(404, "NFC tag not found")
 
-        if result.status != "active":
-            self._repository.reactivate_tag(tag_id)
-            self._repository.commit()
+            if result.status != "active":
+                self._repository.reactivate_tag(tag_id)
+                self._repository.commit()
 
-        return {
-            "tag_id": tag_id,
-            "organization_id": organization_id,
-            "status": "active",
-        }
+            return {
+                "tag_id": tag_id,
+                "organization_id": organization_id,
+                "status": "active",
+            }
 
     def replace_tag(
         self,
@@ -110,44 +122,48 @@ class NfcService:
         old_tag_id: str,
         new_tag_id: str,
     ) -> dict:
-        if old_tag_id == new_tag_id:
-            raise HTTPException(400, "Old and new tag IDs must differ")
+        with nfc_metrics.track_operation("replace"):
+            if old_tag_id == new_tag_id:
+                raise HTTPException(400, "Old and new tag IDs must differ")
 
-        old_tag = self._repository.get_tag(old_tag_id)
+            old_tag = self._repository.get_tag(old_tag_id)
 
-        if not old_tag:
-            raise HTTPException(404, "NFC tag not found")
+            if not old_tag:
+                raise HTTPException(404, "NFC tag not found")
 
-        new_tag = self._repository.get_tag(new_tag_id)
+            new_tag = self._repository.get_tag(new_tag_id)
 
-        if new_tag and str(new_tag.patient_id) != str(old_tag.patient_id):
-            raise HTTPException(409, "New tag is assigned to a different patient")
+            if new_tag and str(new_tag.patient_id) != str(old_tag.patient_id):
+                raise HTTPException(409, "New tag is assigned to a different patient")
 
-        self._repository.upsert_tag(new_tag_id, old_tag.patient_id)
-        if old_tag.status != "inactive":
-            self._repository.deactivate_tag(old_tag_id)
-        self._repository.commit()
+            self._repository.upsert_tag(new_tag_id, old_tag.patient_id)
+            if old_tag.status != "inactive":
+                self._repository.deactivate_tag(old_tag_id)
+            self._repository.commit()
 
-        return {
-            "old_tag_id": old_tag_id,
-            "new_tag_id": new_tag_id,
-            "patient_id": old_tag.patient_id,
-            "organization_id": organization_id,
-            "status": "active",
-        }
+            return {
+                "old_tag_id": old_tag_id,
+                "new_tag_id": new_tag_id,
+                "patient_id": old_tag.patient_id,
+                "organization_id": organization_id,
+                "status": "active",
+            }
 
     def get_tag(self, organization_id: str, tag_id: str) -> dict:
-        result = self._repository.get_tag(tag_id)
+        with nfc_metrics.track_operation("read"):
+            result = self._repository.get_tag(tag_id)
 
-        if not result:
-            raise HTTPException(404, "NFC tag not found")
+            if not result:
+                raise HTTPException(404, "NFC tag not found")
 
-        return {
-            "tag_id": result.tag_id,
-            "patient_id": str(result.patient_id),
-            "organization_id": organization_id,
-            "status": result.status,
-        }
+            return {
+                "tag_id": result.tag_id,
+                "patient_id": str(result.patient_id),
+                "organization_id": organization_id,
+                "status": result.status,
+                "issued_at": self._serialize_timestamp(result.issued_at),
+                "deactivated_at": self._serialize_timestamp(result.deactivated_at),
+            }
 
     def get_tag_by_patient(self, organization_id: str, patient_id) -> dict:
         result = self._repository.get_tag_for_patient(patient_id)
@@ -160,6 +176,8 @@ class NfcService:
             "patient_id": str(result.patient_id),
             "organization_id": organization_id,
             "status": result.status,
+            "issued_at": self._serialize_timestamp(result.issued_at),
+            "deactivated_at": self._serialize_timestamp(result.deactivated_at),
         }
 
     def get_all_tags(
@@ -193,6 +211,8 @@ class NfcService:
                 "patient_id": str(row.patient_id),
                 "organization_id": organization_id,
                 "status": row.status,
+                "issued_at": self._serialize_timestamp(row.issued_at),
+                "deactivated_at": self._serialize_timestamp(row.deactivated_at),
             }
             for row in trimmed
         ]

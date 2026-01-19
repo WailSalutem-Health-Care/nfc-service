@@ -63,6 +63,8 @@ class NFCGetResponse(BaseModel):
     patient_id: str
     organization_id: str
     status: str
+    issued_at: Optional[str] = None
+    deactivated_at: Optional[str] = None
 
 
 class NFCListResponse(BaseModel):

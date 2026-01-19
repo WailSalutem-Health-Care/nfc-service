@@ -5,6 +5,11 @@ metadata:
   namespace: wailsalutem-suite
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: nfc-service
@@ -13,14 +18,62 @@ spec:
       labels:
         app: nfc-service
     spec:
+      serviceAccountName: nfc-service
+      automountServiceAccountToken: false
       containers:
         - name: nfc-service
           image: image-registry.openshift-image-registry.svc:5000/wailsalutem-suite/nfc-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          volumeMounts:
+            - name: nfc-service-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            # OpenTelemetry Configuration
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.observability.svc.cluster.local:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "nfc-service"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.namespace=wailsalutem,deployment.environment=production"
+            - name: OTEL_TRACES_SAMPLER
+              value: "parentbased_always_on"
+            - name: SERVICE_VERSION
+              value: "1.0.0"
+            - name: SERVICE_NAMESPACE
+              value: "wailsalutem"
+            - name: LOG_LEVEL
+              value: "INFO"
           envFrom:
             - configMapRef:
                 name: wailsalutem-backend-config
             - secretRef:
                 name: wailsalutem-backend-secrets
+      volumes:
+        - name: nfc-service-data
+          persistentVolumeClaim:
+            claimName: nfc-service-data

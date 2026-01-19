@@ -12,7 +12,7 @@ class NfcRepository:
         return self._db.execute(
             text(
                 '''
-                SELECT tag_id, patient_id, status
+                SELECT tag_id, patient_id, status, issued_at, deactivated_at
                 FROM "nfc_tags"
                 WHERE tag_id = :tag_id
                 '''
@@ -31,7 +31,7 @@ class NfcRepository:
         return self._db.execute(
             text(
                 '''
-                SELECT tag_id, patient_id, status
+                SELECT tag_id, patient_id, status, issued_at, deactivated_at
                 FROM "nfc_tags"
                 WHERE (:cursor IS NULL OR tag_id > :cursor)
                   AND (:status IS NULL OR status = :status)
@@ -95,7 +95,7 @@ class NfcRepository:
         return self._db.execute(
             text(
                 '''
-                SELECT tag_id, patient_id, status
+                SELECT tag_id, patient_id, status, issued_at, deactivated_at
                 FROM "nfc_tags"
                 WHERE patient_id = :patient_id
                   AND status = 'active'
@@ -108,12 +108,14 @@ class NfcRepository:
         self._db.execute(
             text(
                 '''
-                INSERT INTO "nfc_tags" (tag_id, patient_id, status)
-                VALUES (:tag_id, :patient_id, 'active')
+                INSERT INTO "nfc_tags" (tag_id, patient_id, status, issued_at, deactivated_at)
+                VALUES (:tag_id, :patient_id, 'active', CURRENT_TIMESTAMP, NULL)
                 ON CONFLICT (tag_id)
                 DO UPDATE SET
                     patient_id = EXCLUDED.patient_id,
-                    status = 'active'
+                    status = 'active',
+                    issued_at = CURRENT_TIMESTAMP,
+                    deactivated_at = NULL
                 '''
             ),
             {
@@ -127,7 +129,8 @@ class NfcRepository:
             text(
                 '''
                 UPDATE "nfc_tags"
-                SET status = 'inactive'
+                SET status = 'inactive',
+                    deactivated_at = CURRENT_TIMESTAMP
                 WHERE tag_id = :tag_id
                 '''
             ),
@@ -139,7 +142,8 @@ class NfcRepository:
             text(
                 '''
                 UPDATE "nfc_tags"
-                SET status = 'inactive'
+                SET status = 'inactive',
+                    deactivated_at = CURRENT_TIMESTAMP
                 WHERE patient_id = :patient_id
                 '''
             ),
@@ -151,7 +155,8 @@ class NfcRepository:
             text(
                 '''
                 UPDATE "nfc_tags"
-                SET status = 'inactive'
+                SET status = 'inactive',
+                    deactivated_at = CURRENT_TIMESTAMP
                 '''
             )
         ).rowcount
@@ -161,7 +166,8 @@ class NfcRepository:
             text(
                 '''
                 UPDATE "nfc_tags"
-                SET status = 'active'
+                SET status = 'active',
+                    deactivated_at = NULL
                 WHERE tag_id = :tag_id
                 '''
             ),
