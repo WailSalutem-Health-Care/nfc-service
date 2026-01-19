@@ -52,7 +52,14 @@ allowed_origins_str = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:3000,https://wailsalutem-web-ui.netlify.app,https://wailsalutem-suite.netlify.app"
 )
-allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")]
+# Normalize origins: strip whitespace and remove trailing slashes
+allowed_origins = [
+    origin.strip().rstrip("/") 
+    for origin in allowed_origins_str.split(",") 
+    if origin.strip()
+]
+
+logger.info(f"CORS allowed origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
