@@ -50,15 +50,17 @@ app.add_middleware(TelemetryMiddleware)
 # Configure CORS
 allowed_origins_str = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,https://wailsalutem-web-ui.netlify.app"
+    "http://localhost:3000,https://wailsalutem-web-ui.netlify.app,https://wailsalutem-suite.netlify.app"
 )
 allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")]
 
-allowed_origins_str = os.getenv(
-        "ALLOWED_ORIGINS",
-                        "http://localhost:3000,https://wailsalutem-web-ui.netlify.app",
-    )
-allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(nfc_router)
