@@ -47,7 +47,7 @@ class Config:
     # Application Configuration
     ALLOWED_ORIGINS: str = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:3000,https://wailsalutem-web-ui.netlify.apphttps://wailsalutem-suite.netlify.app"
+        "http://localhost:3000,https://wailsalutem-web-ui.netlify.app,https://wailsalutem-suite.netlify.app"
     )
     
     @classmethod
