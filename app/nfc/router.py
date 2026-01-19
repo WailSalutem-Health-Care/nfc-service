@@ -90,7 +90,7 @@ def get_nfc_tag_by_patient(
     response_model=NFCListResponse,
 )
 def get_all_nfc_tags(
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=100),
     cursor: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
