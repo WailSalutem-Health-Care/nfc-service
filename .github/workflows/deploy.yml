@@ -26,6 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Verify pytest-cov installation
+        run: |
+          python -m pip list | grep -E "(pytest|coverage)"
+
       - name: Run tests (JUnit + coverage)
         run: |
           mkdir -p reports

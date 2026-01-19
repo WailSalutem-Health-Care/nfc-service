@@ -9,6 +9,8 @@ python-jose[cryptography]
 PyYAML
 alembic
 pytest
+pytest-cov
+coverage
 httpx
 prometheus-fastapi-instrumentator
 
