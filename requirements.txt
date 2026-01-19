@@ -10,3 +10,12 @@ PyYAML
 alembic
 pytest
 httpx
+
+# OpenTelemetry dependencies
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-sqlalchemy
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-logging
