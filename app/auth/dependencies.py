@@ -1,3 +1,17 @@
+"""
+Authentication Dependencies
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    FastAPI dependencies for JWT authentication and authorization.
+    Extracts user information from JWT tokens and provides it to endpoints.
+"""
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 

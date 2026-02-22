@@ -1,8 +1,16 @@
 """
-HTTP middleware for OpenTelemetry instrumentation.
+HTTP Middleware for OpenTelemetry Instrumentation
 
-Provides custom metrics and tracing for HTTP requests with proper naming conventions
-compatible with the dashboard requirements.
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    HTTP middleware for OpenTelemetry instrumentation.
+    Provides custom metrics and tracing for HTTP requests with proper naming conventions
+    compatible with the dashboard requirements.
 """
 
 import time

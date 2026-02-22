@@ -1,3 +1,17 @@
+"""
+NFC Service - Main Application Module
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    FastAPI application for NFC tag management with comprehensive OpenTelemetry observability.
+    Includes routing, middleware setup, CORS configuration, and telemetry initialization.
+"""
+
 import logging
 import os
 

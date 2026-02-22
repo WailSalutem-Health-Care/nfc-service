@@ -1,3 +1,17 @@
+"""
+NFC Repository - Data Access Layer
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Data access layer for NFC tag operations. Handles all database queries
+    and transactions using SQLAlchemy ORM.
+"""
+
 from typing import Optional
 
 from sqlalchemy import text

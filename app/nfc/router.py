@@ -1,3 +1,17 @@
+"""
+NFC API Router - HTTP Endpoints
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    FastAPI router defining all NFC tag management endpoints.
+    Handles HTTP request routing, authentication, and response formatting.
+"""
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status

@@ -1,3 +1,17 @@
+"""
+Integration Tests for NFC Router
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Integration tests for NFC API endpoints.
+    Tests HTTP routing, request/response handling, and endpoint behavior.
+"""
+
 from unittest.mock import Mock
 from uuid import UUID
 

@@ -1,3 +1,17 @@
+"""
+JWT Authentication and Keycloak Integration
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Handles JWT token validation and decoding using Keycloak public keys.
+    Provides secure authentication for FastAPI endpoints with caching for JWKS.
+"""
+
 import os
 import requests
 from jose import jwt, JWTError

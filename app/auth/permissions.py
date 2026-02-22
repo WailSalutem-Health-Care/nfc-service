@@ -1,3 +1,17 @@
+"""
+Permission Management and Role-Based Access Control
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Handles role-based access control (RBAC) by loading permissions from YAML configuration.
+    Maps user roles to their corresponding permissions.
+"""
+
 import yaml
 from pathlib import Path
 

@@ -1,3 +1,17 @@
+"""
+NFC Request and Response Schemas
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Pydantic models defining request/response schemas for NFC API endpoints.
+    Provides data validation and OpenAPI documentation generation.
+"""
+
 from typing import List, Optional
 
 from pydantic import BaseModel

@@ -1,3 +1,17 @@
+"""
+SQLAlchemy Database Models
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    SQLAlchemy ORM models for NFC tags and related entities.
+    Defines database schema with timestamps and status tracking.
+"""
+
 from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base

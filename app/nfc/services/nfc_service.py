@@ -1,3 +1,17 @@
+"""
+NFC Service - Business Logic Layer
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Core business logic for NFC tag operations including assignment, deactivation,
+    reactivation, replacement, and retrieval. Integrates with metrics collection.
+"""
+
 from typing import Optional
 
 from fastapi import HTTPException

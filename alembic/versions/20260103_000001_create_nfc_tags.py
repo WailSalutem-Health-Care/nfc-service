@@ -1,4 +1,16 @@
-"""Create nfc_tags table"""
+"""
+Create nfc_tags table
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Initial database migration to create the nfc_tags table.
+    Establishes the core table structure for NFC tag management.
+"""
 
 from alembic import op
 import sqlalchemy as sa

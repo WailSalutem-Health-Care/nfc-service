@@ -4,6 +4,20 @@ Custom business metrics for NFC operations.
 Provides counters, histograms, and gauges for tracking NFC-specific operations.
 """
 
+"""
+Custom Business Metrics for NFC Operations
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Provides counters, histograms, and gauges for tracking NFC-specific operations
+    with automatic metric recording and context managers for operation tracking.
+"""
+
 import logging
 import time
 from typing import Literal

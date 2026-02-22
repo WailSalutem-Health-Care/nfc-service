@@ -1,3 +1,17 @@
+"""
+RabbitMQ Event Consumer
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Consumes events from RabbitMQ and handles NFC tag lifecycle based on
+    patient and organization status changes.
+"""
+
 import json
 import os
 import threading

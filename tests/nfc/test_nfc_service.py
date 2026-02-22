@@ -1,3 +1,17 @@
+"""
+Unit Tests for NFC Service
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Unit tests for the NFC service business logic layer.
+    Tests all NFC operations: assign, deactivate, reactivate, replace, resolve, and retrieval.
+"""
+
 import pytest
 from fastapi import HTTPException
 from types import SimpleNamespace

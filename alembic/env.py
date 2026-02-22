@@ -1,3 +1,18 @@
+"""
+Alembic Environment Configuration
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Alembic migration environment configuration.
+    Handles database initialization and migration execution.
+"""
+# Development Team: Muhammad Faizan, Roozbeh Kouchaki, Fatemehalsadat Sabaghjafari, Dipika Bhandari
+
 from logging.config import fileConfig
 import os
 

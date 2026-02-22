@@ -1,3 +1,17 @@
+"""
+End-to-End Tests for NFC Workflow
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    End-to-end tests for complete NFC tag workflows.
+    Tests the entire flow from tag assignment to deactivation with real database operations.
+"""
+
 import sqlite3
 from uuid import UUID
 

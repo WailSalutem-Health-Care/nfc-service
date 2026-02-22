@@ -1,3 +1,17 @@
+"""
+RabbitMQ Event Publishing
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Handles RabbitMQ connection management and event publishing.
+    Publishes NFC events to the message broker for async processing.
+"""
+
 import json
 import os
 from datetime import datetime, timezone

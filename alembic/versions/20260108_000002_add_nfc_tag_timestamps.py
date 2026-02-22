@@ -1,4 +1,16 @@
-"""Add issued_at and deactivated_at to nfc_tags"""
+"""
+Add issued_at and deactivated_at to nfc_tags
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Database migration to add timestamp columns to nfc_tags table.
+    Tracks when tags were issued and deactivated.
+"""
 
 from alembic import op
 import sqlalchemy as sa

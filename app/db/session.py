@@ -1,3 +1,17 @@
+"""
+Database Session Management
+
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Handles SQLAlchemy session creation and management with multi-tenant schema support.
+    Provides per-organization database isolation through PostgreSQL schemas.
+"""
+
 import os
 from typing import Optional
 

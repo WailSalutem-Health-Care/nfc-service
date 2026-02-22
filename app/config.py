@@ -1,7 +1,15 @@
 """
-Application configuration management.
+Application Configuration Management
 
-Centralizes environment variable access and configuration defaults.
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Centralizes environment variable access and configuration defaults.
+    Provides application-wide configuration settings.
 """
 
 import os

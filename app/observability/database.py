@@ -1,7 +1,15 @@
 """
-Database instrumentation for OpenTelemetry tracing.
+Database Instrumentation for OpenTelemetry Tracing
 
-Provides automatic tracing for SQLAlchemy database operations.
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Database instrumentation for OpenTelemetry tracing.
+    Provides automatic tracing for SQLAlchemy database operations.
 """
 
 import logging

@@ -1,7 +1,15 @@
 """
-Structured logging configuration with OpenTelemetry trace correlation.
+Structured Logging Configuration with OpenTelemetry Integration
 
-Configures JSON logging with automatic trace_id and span_id injection.
+Developers:
+  - Muhammad Faizan
+  - Roozbeh Kouchaki
+  - Fatemehalsadat Sabaghjafari
+  - Dipika Bhandari
+
+Description:
+    Structured logging configuration with OpenTelemetry trace correlation.
+    Configures JSON logging with automatic trace_id and span_id injection.
 """
 
 import logging
